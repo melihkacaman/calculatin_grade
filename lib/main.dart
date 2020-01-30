@@ -10,9 +10,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // Variables
   String lessonName = "";
-  int credit;
+  int credit = 1;
   double letterPoint = 4;
+  int lessonCount = 0;
+  List<Lesson> lessons;
+  var formKey;
+  double avg = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    lessons = [];
+    formKey = GlobalKey<FormState>();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +35,14 @@ class _MyAppState extends State<MyApp> {
       ),
       body: appBody(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          if (formKey.currentState.validate()) {
+            formKey.currentState.save();
+          }
+          setState(() {
+            calculate();
+          });
+        },
         child: Icon(Icons.add),
       ),
     );
@@ -34,39 +54,41 @@ class _MyAppState extends State<MyApp> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Expanded(
-            child: Container(
-              color: Colors.pink.shade200,
-              child: Form(
-                child: Column(
-                  children: <Widget>[
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: "Ders Adı",
-                        hintText: "Ders adını giriniz...",
-                        hintStyle: TextStyle(fontSize: 18),
-                        labelStyle: TextStyle(fontSize: 21),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              BorderSide(color: Colors.purple, width: 2),
-                        ),
-                        border: OutlineInputBorder(),
+          Container(
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: "Ders Adı",
+                      hintText: "Ders adını giriniz...",
+                      hintStyle: TextStyle(fontSize: 18),
+                      labelStyle: TextStyle(fontSize: 21),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.purple, width: 2),
                       ),
-                      validator: (value) {
-                        if (value.length > 0) {
-                          return null;
-                        } else {
-                          return "Ders adı boş geçilemez ! ";
-                        }
-                      },
-                      onSaved: (value) {
-                        lessonName = value;
-                      },
+                      border: OutlineInputBorder(),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Container(
+                    validator: (value) {
+                      if (value.length > 0) {
+                        return null;
+                      } else {
+                        return "Ders adı boş geçilemez ! ";
+                      }
+                    },
+                    onSaved: (value) {
+                      lessonName = value;
+                      setState(() {
+                        lessons.add(Lesson(value, credit, letterPoint));
+                      });
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Container(
+                        child: DropdownButtonHideUnderline(
                           child: DropdownButton(
                             items: getCreditsItems(),
                             value: credit,
@@ -76,17 +98,19 @@ class _MyAppState extends State<MyApp> {
                               });
                             },
                           ),
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          margin: EdgeInsets.only(top: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.purple, width: 2),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(10),
-                            ),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        margin: EdgeInsets.only(top: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.purple, width: 2),
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
                           ),
                         ),
-                        Container(
+                      ),
+                      Container(
+                        child: DropdownButtonHideUnderline(
                           child: DropdownButton(
                             items: getLetterPointsItems(),
                             value: letterPoint,
@@ -96,27 +120,51 @@ class _MyAppState extends State<MyApp> {
                               });
                             },
                           ),
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          margin: EdgeInsets.only(top: 10),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.purple, width: 2),
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(10),
-                            ),
+                        ),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        margin: EdgeInsets.only(top: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.purple, width: 2),
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
+          Container(
+            child: RichText(
+              text: TextSpan(children: [
+                TextSpan(
+                    text:
+                        (avg == 0) ? "Lütfen ders ekleyiniz..." : "Ortalama: ",
+                    style: TextStyle(color: Colors.black, fontSize: 28)),
+                TextSpan(
+                    text: (avg == 0) ? "" : "${avg.toStringAsFixed(2)}",
+                    style: TextStyle(color: Colors.purple, fontSize: 28)),
+              ]),
+            ),
+            alignment: Alignment.center,
+            margin: EdgeInsets.symmetric(vertical: 10),
+            height: 70,
+            decoration: BoxDecoration(
+                border: BorderDirectional(
+              top: BorderSide(color: Colors.blue, width: 2),
+              bottom: BorderSide(color: Colors.blue, width: 2),
+            )),
+          ),
           Expanded(
             child: Container(
-              color: Colors.blue.shade300,
-              child: Text("List"),
+              color: Colors.grey.shade200,
+              child: ListView.builder(
+                itemBuilder: myListItem,
+                itemCount: lessons.length,
+              ),
             ),
           )
         ],
@@ -200,4 +248,58 @@ class _MyAppState extends State<MyApp> {
 
     return harfler;
   }
+
+  Widget myListItem(BuildContext context, int index) {
+    return Dismissible(
+      key: GlobalKey(),
+      direction: DismissDirection.startToEnd,
+      child: Container(
+        padding: EdgeInsets.all(1),
+        child: Card(
+          borderOnForeground: true,
+          elevation: 5,
+          child: ListTile(
+            leading: Icon(
+              Icons.golf_course,
+              color: Colors.blue,
+              size: 40,
+            ),
+            title: Text(lessons[index].name),
+            subtitle: Text(lessons[index].credit.toString() +
+                " kredi, Notu:" +
+                lessons[index].letterPoint.toString()),
+          ),
+        ),
+      ),
+      onDismissed: (DismissDirection d) {
+        setState(() {
+          lessons.removeAt(index);
+          calculate();
+        });
+      },
+    );
+  }
+
+  void calculate() {
+    double toplamNot = 0;
+    double toplamKredi = 0;
+
+    for (var oankiDers in lessons) {
+      var kredi = oankiDers.credit;
+      var harfDegeri = oankiDers.letterPoint;
+
+      toplamNot = toplamNot + (harfDegeri * kredi);
+      toplamKredi += kredi;
+    }
+
+    avg = toplamNot / toplamKredi;
+  }
+}
+
+class Lesson {
+  String name;
+  double letterPoint;
+  int credit;
+
+  Lesson(this.name, this.credit, this.letterPoint);
 }
